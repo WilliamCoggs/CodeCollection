@@ -1,0 +1,142 @@
+import pandas  as pd
+HOST_PCT_WEIGHT = 15
+DIVISION_WEIGHT = 5
+QB_WEIGHT = 15
+STREAK_WEIGHT = 10
+TWITTER_WEIGHT = 20
+
+
+class QuarterBack:
+    PCT_WEIGHT = 10
+    TD_WEIGHT = 7
+    SACK_WEIGHT = 5
+    RATE_WEIGHT = 15
+    def _init_(self, name, team, comp, att, PCT, TD, SACK, Rate, year):
+        self.name = name
+        self.team = team
+        self.comp = comp
+        self.att = att
+        self.PCT = PCT
+        self.TD = TD
+        self.SACK = SACK
+        self.Rate = Rate
+        self.year = year
+    
+class FootballTeam:
+    def _init_(self, name, year, HomePCT, RoadPCT, division, divisionPCT, streak, QB):
+        self.name = name
+        self.year = year
+        self.HomePCT = HomePCT
+        self.RoadPCT = RoadPCT
+        self.division = division
+        self.divisionPCT = divisionPCT
+        self.streak = streak
+        self.QB = QB
+
+def CompareQB(QB1, QB2):
+    QB1pts = 0
+    QB2pts = 0
+    if QB1.PCT > QB2.PCT:
+        #PCT is looking at the % completions for a Quarterback
+        QB1pts += PCT_WEIGHT
+    else:
+        QB2pts += PCT_WEIGHT
+    
+    if QB1.TD > QB2.TD:
+        QB1pts += TD_WEIGHT
+    else:
+        QB2pts += TD_WEIGHT
+    
+    if QB1.Rate > QB2.Rate:
+        QB1pts += RATE_WEIGHT
+    else:
+        QB2pts += RATE_WEIGHT
+    
+    if QB1.SACK < QB2.SACK:
+        QB1pts += SACK_WEIGHT
+    else:
+        QB2pts += SACK_WEIGHT
+
+#Due to the weights
+    if QB1pts > QB2pts:
+        return QB1.team 
+    else:
+        return QB2.team
+        
+
+#predicting who the winner is between the two
+def predictWinner(team1, team2, host, year1 = 2018, year2 = 2018):
+#including twitter analysis
+    if year1 == 2018 & year2 == 2018:
+        includeTwitterAnalysis = True
+        #comparing 'sentiment' ratings and adding whichever team has the higher one
+        
+    else:
+        includeTwitterAnalysis = False
+    
+    team1pts = 0
+    team2pts = 0
+    
+#QB Analysis
+    QBWinner = CompareQB(team1.QB, team2.QB)
+    if team1.name == QBWinner:
+        team1pts += QB_WEIGHT
+    else:
+        team2pts += QB_WEIGHT
+
+#Hosting Analysis
+    if team1.name == host:
+        #Team 1 is hosting the game
+        if team1.HomePCT > team2.RoadPCT :
+            team1pts += HOST_PCT_WEIGHT
+        else:
+            team2pts += HOST_PCT_WEIGHT
+    
+    if(team1.name == travelWinner):
+        team1pts += HOST_PCT_WEIGHT
+    else:
+        team2pts += HOST_PCT_WEIGHT
+
+#Streak Analysis
+    #Streak needs to be parsed into the number and if its Wins or Losses
+    team1StreakNum = team1.streak[0:len(team1.streak)-1]
+    team1StreakType = team1.streak[:-1]
+    team2StreakNum = team2.streak[0:len(team1.streak)-1]
+    team2StreakType = team2.streak[:-1]
+    # 3 cases : 
+        # W streak v W streak - the larger streak wins
+        # L streak v L streak - the smaller streak wins
+        # W streak v L streak - the W streak wins
+    
+    
+    if team1StreakType == team2StreakType:
+        if team1StreakType == 'L':
+            if team1StreakNum < team2StreakNum:
+                team1pts += STREAK_WEIGHT
+            else:
+                team1pts += STREAK_WEIGHT
+            
+        elif team1StreakType == 'W':
+            if team1StreakNum > team2StreakNum:
+                team1pts += STREAK_WEIGHT
+            else:
+                team2pts += STREAK_WEIGHT
+
+    elif team1StreakType != team2StreakType & team1StreakType == 'W':
+        team1pts += STREAK_WEIGHT
+    
+    else:
+        team2pts += STREAK_WEIGHT
+    
+#Division Analysis
+    if team1.division == team2.division:
+        if team1.divisionPCT > team2.divisionPCT:
+            team1pts += DIVISON_WEIGHT
+        else:
+            team2pts += DIVISION_WEIGHT
+            
+# End of analysis, time to return the team that has the most points
+    if team1pts > team2pts:
+        return team1
+    else:
+        return team2
